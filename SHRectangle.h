@@ -268,7 +268,7 @@ namespace SH {
 		return result;
 	}
 
-	float NonMaxSup(Rectangle& d1, Rectangle& d2){
+	float NonMaxSupp(Rectangle& d1, Rectangle& d2){
 		result = intersectionOverUnion(d1, d2) - (distanceCenPoint(d1, d2)/diagonal(d1, d2));
 		return result;
 	}
