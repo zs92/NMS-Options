@@ -1,10 +1,11 @@
-#include <iostream>
+//#include <iostream>
 
-#include <QtCore>
-#include <QString>
+//#include <QtCore>
+//#include <QString>
 
-#include "SHRectangle.h"
-#include "SHColor.h"
+//#include "SHRectangle.h"
+//#include "SHColor.h"
+#include "SortByClass.h"
 #include <math.h>
 
 SH::DetectionRectangle readZBSAnnotationLine(const QString& annotationLine) {
@@ -130,42 +131,25 @@ void drawKeypoints(cv::Mat& img_draw, std::vector<SH::DetectionRectangle> detect
 	}
 }
 
-struct newDetection
-{
-	QString className;
-	float x_c;
-	float y_c;
-	float width;
-	float height;
-	float prob;
-};
 
-
-
-bool isSameObj(SH::DetectionRectangle d1, SH::DetectionRectangle d2, float threshold){
-	if(d1.className != d2.className){
-		return false;
-	}
-	float NMS = SH::NonMaxSupp(d1, d2);
-	if(NMS <= threshold){
-		return true;
-	}else{
-		return false;
-	}
-
-}
 
 
 int main() {
 	// Example 1: Load Annotations
 	auto detections = readZBSAnnotationsFile("E:/HiTD_SEFUGA-Data/Coco/test2017/000000000063.annotations"); //@Zhe: Path needs to be adjusted
 
+	MergeBBox(detections, newdetections, 0.5);
+
 	// Example 2: Write Annotations
-	//writeZBSAnnotationsFile(detections, "D:/test.annotations"); //@Zhe: Path needs to be adjusted
+	writeZBSAnnotationsFile(newdetections, "D:/test.annotations"); //@Zhe: Path needs to be adjusted
 
 	// Example 3: Show image with annotations
 	cv::Mat image = cv::imread("E:/HiTD_SEFUGA-Data/Coco/test2017/000000000063.jpg"); //@Zhe: Path needs to be adjusted
 	drawKeypoints(image, detections);
+	cv::Mat newimage = cv::imread("E:/HiTD_SEFUGA-Data/Coco/test2017/000000000063.jpg");
+	drawKeypoints(newimage, newdetections);
+
 	cv::imshow("image", image);
+	cv::imshow("newimage", newimage);
 	cv::waitKey(0);
 }
