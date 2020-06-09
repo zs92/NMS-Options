@@ -13,11 +13,11 @@ void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::ma
 	std::map<QString, std::vector<SH::DetectionRectangle>>::iterator it;
 	it = mapDetect.begin();
 	for(int i = 0; i < detections.size(); i++){
-		Name = detections[i].className;
+		QString Name = detections[i].className;
 		it = mapDetect.find(Name);
 		if(it == mapDetect.end()){//ClassName not found. 
 
-			className = Name.toStdString(); //From Qstring to string, just for vector initialization.
+			std::string className = Name.toStdString(); //From Qstring to string, just for vector initialization.
 			std::string vectorName = "BeforeVector"+className;
 			std::vector<SH::DetectionRectangle> vectorName;//I'm not sure, if I can initialize a vector in this way.
 
@@ -40,8 +40,8 @@ void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::ma
 
 
 	for(it = mapDetect.begin(); it != mapDetect.end(); it++){
-		NameOfClass = it->first;
-		Vect = it->second;
+		QString NameOfClass = it->first;
+		std::vector<SH::DetectionRectangle> Vect = it->second;
 		int k = 0;
 		while(Vect.size() != 0){
 			k = k + 1;
@@ -53,8 +53,8 @@ void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::ma
     		std::vector<float>::iterator biggest = std::max_element(std::begin(Vect), std::end(Vect));
     		int maxPosition = max_element(Vect.begin(),Vect.end()) - Vect.begin(); 
 
-    		strNameOfClass = NameOfClass.toStdString();
-    		std::string str=to_string(k)
+    		std::string strNameOfClass = NameOfClass.toStdString();
+    		std::string str=std::to_string(k);
     		std::string vecSortByObj = strNameOfClass + str;//Just for a different Object having a different vector name.
     		std::vector<SH::DetectionRectangle> vecSortByObj;//I'm not sure, if I can initialize a vector in this way.
     		QString Qstr = QString::number(k);
@@ -92,12 +92,12 @@ void AdaptionBBox(std::vector<SH::DetectionRectangle> Inputs, SH::DetectionRecta
 	}else{
 		//SH::DetectionRectangle Output;
 		std::vector<float>::iterator biggest = std::max_element(std::begin(Inputs), std::end(Inputs));
-		maxProb = *biggest;
+		float maxProb = *biggest;
 		float sumX = 0;
 		float sumY = 0;
 		float sumWidth = 0;
 		float sumHeight = 0;
-		className = Inputs[0].className;
+		QString className = Inputs[0].className;
 		for(int i = 0; i < Inputs.size(); i++){
 			sumX  = sumX + Inputs[i].x_c;
 			sumY  = sumY + Inputs[i].y_c;
@@ -121,16 +121,17 @@ void AdaptionBBox(std::vector<SH::DetectionRectangle> Inputs, SH::DetectionRecta
 
 void convertMapIntoVector(std::map<QString, std::vector<SH::DetectionRectangle>> mapDetect, std::vector<SH::DetectionRectangle> detections ){
 	//std::vector<SH::DetectionRectangle> detections;
+	std::map<QString, std::vector<SH::DetectionRectangle>>::iterator it;
 	SH::DetectionRectangle detection;
 	for(it = mapDetect.begin(); it != mapDetect.end(); it++){
-		Vect = it->second;
+		std::vector<SH::DetectionRectangle> Vect = it->second;
 		AdaptionBBox(Vect, detection);
 		detections.push_back(detection);
 	}
 }
 
 void MergeBBox(std::vector<SH::DetectionRectangle> inputs, std::vector<SH::DetectionRectangle> outputs, float threshold){
-	std::vector<SH::DetectionRectangle>> mapDetect;
+	std::vector<SH::DetectionRectangle> mapDetect;
 	sortByObjectIntoMap(inputs, mapDetect,threshold);
 	convertMapIntoVector(mapDetect, outputs);
 
