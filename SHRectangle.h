@@ -7,7 +7,7 @@
 #include <opencv2/opencv.hpp>
 
 // Rainer: Wenn dieses Symbol gesetzt ist, wird das Histogramm aus dem Tiefenbild
-// berechnet, und das Disparitätsbild ist aus dem ImageStack-Objekt gelöscht.
+// berechnet, und das DisparitÃ¤tsbild ist aus dem ImageStack-Objekt gelÃ¶scht.
 #define USE_ONLY_DEPTH
 
 namespace SH {
@@ -269,7 +269,7 @@ namespace SH {
 	}
 
 	float NonMaxSupp(Rectangle& d1, Rectangle& d2){
-		result = intersectionOverUnion(d1, d2) - (distanceCenPoint(d1, d2)/diagonal(d1, d2));
+		result = intersectionOverUnion(d1, d2) - (distanceCenPoint(d1, d2)/diagonal(d1, d2));//Penalty function: R(diou).
 		return result;
 	}
 
