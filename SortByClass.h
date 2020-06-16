@@ -127,6 +127,7 @@ void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::ma
 			Vect.erase(itr++);// And then delete it.
 			for (int i = 0; i < Vect.size(); i++) {
 				if (SH::isSameObj(Vect[i], vecSortByObj[0], threshold)) {
+					//should use a new isSameObj function
 					// If they belong to the same Object, then put them into a same vector.
 					vecSortByObj.push_back(Vect[i]);
 					// And delete it from the original vector.
