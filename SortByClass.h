@@ -178,85 +178,90 @@ void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::ma
 }
 
 
-void AdaptionBBox(std::vector<SH::DetectionRectangle> Inputs, SH::DetectionRectangle& Output) {
+void AdaptionBBox(std::vector<SH::DetectionRectangle> Inputs, SH::DetectionRectangle& Output, int flag) {
 	std::cout << "The Input of function AdaptionBBox is " << Inputs.size() << std::endl;
 
 	if (Inputs.size() == 0) {
-
 		std::cout << "Error in AdaptionBBox, input size = 0" << std::endl;
-
 	}
-	else {
 
-		//SH::DetectionRectangle Output;
+	switch(flag){
+		case 1:
+			{
+				std::vector<float> vectorProb;
+				for (int i = 0; i < Inputs.size(); i++) {
+					vectorProb.push_back(Inputs[i].prob);
+				}
+				int position = 0;
+				float getMax = 0;
+				position = getMaxAndPosition(vectorProb, getMax);
+				std::cout << "getMax and Position Finished" << std::endl;
 
-		//std::vector<float>::iterator biggest = std::max_element(std::begin(Inputs), std::end(Inputs));
+				float maxProb = getMax;
+				float sumX = 0;
+				float sumY = 0;
+				float sumWidth = 0;
+				float sumHeight = 0;
+				QString className = Inputs[0].className;
 
-		std::vector<float> vectorProb;
+				for (int i = 0; i < Inputs.size(); i++) {
+					sumX = sumX + Inputs[i].x_c;
+					sumY = sumY + Inputs[i].y_c;
+					sumWidth = sumWidth + Inputs[i].width;
+					sumHeight = sumHeight + Inputs[i].height;
+					if (Inputs[i].className != className) {
+						std::cout << "Error in AdaptionBBox, classname are different" << std::endl;
+					}
+				}
+				int InputSize = Inputs.size();
+				Output.x_c = sumX / InputSize;
+				Output.y_c = sumY / InputSize;
+				Output.width = sumWidth / InputSize;
+				Output.height = sumHeight / InputSize;
+				Output.prob = maxProb;
+				Output.className = className;
+			}
 
-		for (int i = 0; i < Inputs.size(); i++) {
-
-			vectorProb.push_back(Inputs[i].prob);
-
-		}
-
-		int position = 0;
-
-		float getMax = 0;
-
-		position = getMaxAndPosition(vectorProb, getMax);
-		std::cout << "getMax and Position Finished" << std::endl;
-
-		float maxProb = getMax;
-
-		float sumX = 0;
-
-		float sumY = 0;
-
-		float sumWidth = 0;
-
-		float sumHeight = 0;
-
-		QString className = Inputs[0].className;
-
-		for (int i = 0; i < Inputs.size(); i++) {
-
-			sumX = sumX + Inputs[i].x_c;
-
-			sumY = sumY + Inputs[i].y_c;
-
-			sumWidth = sumWidth + Inputs[i].width;
-
-			sumHeight = sumHeight + Inputs[i].height;
-
-			if (Inputs[i].className != className) {
-
-				std::cout << "Error in AdaptionBBox, classname are different" << std::endl;
+		case 2:
+			{
+				std::vector<float> vectorProb;
+				for (int i = 0; i < Inputs.size(); i++) {
+					vectorProb.push_back(Inputs[i].prob);
+				}
+				int position = 0;
+				float getMax = 0;
+				position = getMaxAndPosition(vectorProb, getMax);
+				std::cout << "getMax and Position Finished" << std::endl;
+				float maxProb = getMax;
+				float sumX = 0;
+				float sumY = 0;
+				float sumWidth = 0;
+				float sumHeight = 0;
+				QString className = Inputs[0].className;
+				float diffProb = 0;
+				for (int i = 0; i < Inputs.size(); i++) {
+					currProb = Inputs[i].prob;
+					diffProb = sqrt(maxProb - currProb);
+					sumX = sumX + Inputs[i].x_c * diffProb;
+					sumY = sumY + Inputs[i].y_c * diffProb;
+					sumWidth = sumWidth + Inputs[i].width * diffProb;
+					sumHeight = sumHeight + Inputs[i].height * diffProb;
+					if (Inputs[i].className != className) {
+						std::cout << "Error in AdaptionBBox, classname are different" << std::endl;
+					}
+				}
+				int InputSize = Inputs.size();
+				Output.x_c = sumX / InputSize;
+				Output.y_c = sumY / InputSize;
+				Output.width = sumWidth / InputSize;
+				Output.height = sumHeight / InputSize;
+				Output.prob = maxProb;
+				Output.className = className;
 
 			}
 
-
-
-		}
-
-		int InputSize = Inputs.size();
-
-		Output.x_c = sumX / InputSize;
-
-		Output.y_c = sumY / InputSize;
-
-		Output.width = sumWidth / InputSize;
-
-		Output.height = sumHeight / InputSize;
-
-		Output.prob = maxProb;
-
-		Output.className = className;
-
 	}
-
 	std::cout << "AdaptionBBox Finished" << std::endl;
-
 }
 
 
