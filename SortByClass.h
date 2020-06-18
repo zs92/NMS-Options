@@ -35,7 +35,6 @@ int getMaxAndPosition( std::vector<T> input, T& Max) {
 
 
 void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::map<QString, std::vector<SH::DetectionRectangle>> &outputMap, float threshold) {
-
 	std::map<QString, std::vector<SH::DetectionRectangle>> mapDetect;
 	std::map<QString, std::vector<SH::DetectionRectangle>>::iterator it;
 
@@ -112,28 +111,30 @@ void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::ma
 			float getMax = 0.0;
 			position = getMaxAndPosition(vectorProb, getMax);
 			std::cout << "getMax and Position Finished" << std::endl;
-			//Question: how to dynamically initializ a vector?
 			std::string strNameOfClass = NameOfClass.toStdString();
 			std::string str = std::to_string(k);
-			//std::string vecSortByObj = strNameOfClass + str;//Just for a different Object having a different vector name.
 			std::vector<SH::DetectionRectangle> vecSortByObj;//I'm not sure, if I can initialize a vector in this way.
 
 			QString Qstr = QString::number(k);
 			auto newKeyName = NameOfClass + Qstr;
-			mapDetect.insert(std::pair<QString, std::vector<SH::DetectionRectangle>>(newKeyName, vecSortByObj));
+			//outputMap.insert(std::pair<QString, std::vector<SH::DetectionRectangle>>(newKeyName, vecSortByObj));
 
 			vecSortByObj.push_back(Vect[position]);//move the biggest into a new vector.
 			std::vector<SH::DetectionRectangle>::iterator itr = (Vect.begin() + position);
 			Vect.erase(itr++);// And then delete it.
 			for (int i = 0; i < Vect.size(); i++) {
-				if (SH::isSameObj(Vect[i], vecSortByObj[0], threshold)) {
-					//should use a new isSameObj function
+				bool SameObj = SH::isSameObj(Vect[i], vecSortByObj[0], threshold);
+				if (SameObj) {
 					// If they belong to the same Object, then put them into a same vector.
 					vecSortByObj.push_back(Vect[i]);
 					// And delete it from the original vector.
 					std::vector<SH::DetectionRectangle>::iterator newitr = (Vect.begin() + i);
 					Vect.erase(newitr);
+					i = i - 1;
 					std::cout << "Vec erase Finished" << std::endl;
+				}
+				else {
+					continue;
 				}
 
 			}
@@ -178,97 +179,191 @@ void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::ma
 }
 
 
-void AdaptionBBox(std::vector<SH::DetectionRectangle> Inputs, SH::DetectionRectangle& Output, int flag) {
+void oldAdaptionBBox(std::vector<SH::DetectionRectangle> Inputs, SH::DetectionRectangle& Output) {
 	std::cout << "The Input of function AdaptionBBox is " << Inputs.size() << std::endl;
-
 	if (Inputs.size() == 0) {
 		std::cout << "Error in AdaptionBBox, input size = 0" << std::endl;
 	}
+		std::vector<float> vectorProb;
+		for (int i = 0; i < Inputs.size(); i++) {
+			vectorProb.push_back(Inputs[i].prob);
+		}
+		int position = 0;
+		float getMax = 0;
+		position = getMaxAndPosition(vectorProb, getMax);
+		std::cout << "getMax and Position Finished" << std::endl;
+		float maxProb = getMax;
+		float sumX = 0;
+		float sumY = 0;
+		float sumWidth = 0;
+		float sumHeight = 0;
+		QString className = Inputs[0].className;
 
-	switch(flag){
-		case 1:
-			{
-				std::vector<float> vectorProb;
-				for (int i = 0; i < Inputs.size(); i++) {
-					vectorProb.push_back(Inputs[i].prob);
-				}
-				int position = 0;
-				float getMax = 0;
-				position = getMaxAndPosition(vectorProb, getMax);
-				std::cout << "getMax and Position Finished" << std::endl;
 
-				float maxProb = getMax;
-				float sumX = 0;
-				float sumY = 0;
-				float sumWidth = 0;
-				float sumHeight = 0;
-				QString className = Inputs[0].className;
+		for (int i = 0; i < Inputs.size(); i++) {
+			sumX = sumX + Inputs[i].x_c;
+			sumY = sumY + Inputs[i].y_c;
+			sumWidth = sumWidth + Inputs[i].width;
+			sumHeight = sumHeight + Inputs[i].height;
+			if (Inputs[i].className != className) {
+				std::cout << "Error in AdaptionBBox, classname are different" << std::endl;
+			}
+		}
+		int InputSize = Inputs.size();
+		Output.x_c = sumX / InputSize;
+		Output.y_c = sumY / InputSize;
+		Output.width = sumWidth / InputSize;
+		Output.height = sumHeight / InputSize;
+		Output.prob = maxProb;
+		Output.className = className;
 
-				for (int i = 0; i < Inputs.size(); i++) {
-					sumX = sumX + Inputs[i].x_c;
-					sumY = sumY + Inputs[i].y_c;
-					sumWidth = sumWidth + Inputs[i].width;
-					sumHeight = sumHeight + Inputs[i].height;
-					if (Inputs[i].className != className) {
-						std::cout << "Error in AdaptionBBox, classname are different" << std::endl;
-					}
-				}
-				int InputSize = Inputs.size();
-				Output.x_c = sumX / InputSize;
-				Output.y_c = sumY / InputSize;
-				Output.width = sumWidth / InputSize;
-				Output.height = sumHeight / InputSize;
-				Output.prob = maxProb;
-				Output.className = className;
+
+	std::cout << "AdaptionBBox Finished" << std::endl;
+
+}
+
+
+void AdaptionBBox(std::vector<SH::DetectionRectangle> Inputs, SH::DetectionRectangle& Output,const int flag) {
+	std::cout << "The Input of function AdaptionBBox is " << Inputs.size() << std::endl;
+	if (Inputs.size() == 0) {
+		std::cout << "Error in AdaptionBBox, input size = 0" << std::endl;
+	}
+	if (flag == 1) { //Average Adaption	
+		std::vector<float> vectorProb;
+		for (int i = 0; i < Inputs.size(); i++) {
+			vectorProb.push_back(Inputs[i].prob);
+		}
+		int position = 0;
+		float getMax = 0;
+		position = getMaxAndPosition(vectorProb, getMax);
+		std::cout << "getMax and Position Finished" << std::endl;
+		float maxProb = getMax;
+		float sumX = 0;
+		float sumY = 0;
+		float sumWidth = 0;
+		float sumHeight = 0;
+		QString className = Inputs[0].className;
+
+
+		for (int i = 0; i < Inputs.size(); i++) {
+			sumX = sumX + Inputs[i].x_c;
+			sumY = sumY + Inputs[i].y_c;
+			sumWidth = sumWidth + Inputs[i].width;
+			sumHeight = sumHeight + Inputs[i].height;
+			if (Inputs[i].className != className) {
+				std::cout << "Error in AdaptionBBox, classname are different" << std::endl;
+			}
+		}
+		int InputSize = Inputs.size();
+		Output.x_c = sumX / InputSize;
+		Output.y_c = sumY / InputSize;
+		Output.width = sumWidth / InputSize;
+		Output.height = sumHeight / InputSize;
+		Output.prob = maxProb;
+		Output.className = className;
+	}
+
+	else if (flag == 2) { //Intersection based Adaption
+		std::vector<float> vectorProb;
+		for (int i = 0; i < Inputs.size(); i++) {
+			vectorProb.push_back(Inputs[i].prob);
+		}
+		int position = 0;
+		float getMax = 0;
+		position = getMaxAndPosition(vectorProb, getMax);
+		std::cout << "getMax and Position Finished" << std::endl;
+		Output = Inputs[position];
+		for (int i = 0; i < Inputs.size(); i++) {
+			if (i == position) {
+				continue;
+			}
+			float interSec = SH::intersectionArea(Output, Inputs[i]);
+			float Area = Output.getArea(); // The area of rectangle, which has the maxProb.
+			if (interSec == 0) {
+				//Maybe the rectangle Inputs[i] is not a correct detection.
+				std::cout << "intersection = 0, "<< Output.className.toStdString() << std::endl;
+
+				//continue;
+			}
+			if ((interSec / Area) <= (Inputs[i].prob / getMax)) {
+				//change the parameter of Outpus.
+				//float diffProb = getMax - Inputs[i].prob;
+				float diffProb = Inputs[i].prob;
+				float delteX = (Output.x_c - Inputs[i].x_c) * diffProb;
+				Output.x_c = Output.x_c - delteX;
+
+				float delteY = (Output.y_c - Inputs[i].y_c) * diffProb;
+				Output.y_c = Output.y_c - delteY;
+
+				float delteW = (Output.width - Inputs[i].width) * diffProb;
+				Output.width = Output.width - delteW;
+
+				float delteH = (Output.height - Inputs[i].height) * diffProb;
+				Output.height = Output.height - delteH;
+			}
+			else {
+				// this means that the current rectangle doesn't have too much influence on the Output.
 			}
 
-		case 2:
-			{
-				std::vector<float> vectorProb;
-				for (int i = 0; i < Inputs.size(); i++) {
-					vectorProb.push_back(Inputs[i].prob);
-				}
-				int position = 0;
-				float getMax = 0;
-				position = getMaxAndPosition(vectorProb, getMax);
-				std::cout << "getMax and Position Finished" << std::endl;
-				float maxProb = getMax;
-				float sumX = 0;
-				float sumY = 0;
-				float sumWidth = 0;
-				float sumHeight = 0;
-				QString className = Inputs[0].className;
-				float diffProb = 0;
-				for (int i = 0; i < Inputs.size(); i++) {
-					currProb = Inputs[i].prob;
-					diffProb = sqrt(maxProb - currProb);
-					sumX = sumX + Inputs[i].x_c * diffProb;
-					sumY = sumY + Inputs[i].y_c * diffProb;
-					sumWidth = sumWidth + Inputs[i].width * diffProb;
-					sumHeight = sumHeight + Inputs[i].height * diffProb;
-					if (Inputs[i].className != className) {
-						std::cout << "Error in AdaptionBBox, classname are different" << std::endl;
-					}
-				}
-				int InputSize = Inputs.size();
-				Output.x_c = sumX / InputSize;
-				Output.y_c = sumY / InputSize;
-				Output.width = sumWidth / InputSize;
-				Output.height = sumHeight / InputSize;
-				Output.prob = maxProb;
-				Output.className = className;
-
-			}
+		}
 
 	}
+	else {	
+			std::vector<float> vectorProb;
+			for (int i = 0; i < Inputs.size(); i++) {
+				vectorProb.push_back(Inputs[i].prob);
+			}
+			int position = 0;
+			float getMax = 0;
+			position = getMaxAndPosition(vectorProb, getMax);
+			std::cout << "getMax and Position Finished" << std::endl;
+			float maxProb = getMax;
+			float sumX = 0;
+			float sumY = 0;
+			float sumWidth = 0;
+			float sumHeight = 0;
+			QString className = Inputs[0].className;
+
+			float diffProb = 0;
+			float currProb = 0;
+			int countSize = 0;
+			int count = 0;
+			for (int i = 0; i < Inputs.size(); i++) {
+				currProb = Inputs[i].prob;
+				//diffProb = sqrt(maxProb) - sqrt(currProb);
+				//diffProb = pow(maxProb, 2) - pow(currProb, 2);
+				diffProb = maxProb - currProb;
+				if (diffProb == 0) {
+					diffProb = 1;
+				}
+				sumX = sumX + Inputs[i].x_c *(1 - diffProb);
+				sumY = sumY + Inputs[i].y_c * (1 - diffProb);
+				sumWidth = sumWidth + Inputs[i].width * (1 - diffProb);
+				sumHeight = sumHeight + Inputs[i].height * (1 - diffProb);
+				if (Inputs[i].className != className) {
+					std::cout << "Error in AdaptionBBox, classname are different" << std::endl;
+				}
+				countSize = countSize + diffProb;
+
+			}
+
+			int InputSize = Inputs.size();
+			Output.x_c = sumX / countSize;
+			Output.y_c = sumY / countSize;
+			Output.width = sumWidth / countSize;
+			Output.height = sumHeight / countSize;
+			Output.prob = maxProb;
+			Output.className = className;
+
+		}
+
 	std::cout << "AdaptionBBox Finished" << std::endl;
+
 }
 
 
 
-
-
-void convertMapIntoVector(std::map<QString, std::vector<SH::DetectionRectangle>> mapDetect, std::vector<SH::DetectionRectangle>& detections) {
+void convertMapIntoVector(std::map<QString, std::vector<SH::DetectionRectangle>> mapDetect, std::vector<SH::DetectionRectangle>& detections,const int flag) {
 
 	//std::vector<SH::DetectionRectangle> detections;
 
@@ -280,16 +375,12 @@ void convertMapIntoVector(std::map<QString, std::vector<SH::DetectionRectangle>>
 	it = mapDetect.begin();
 	auto vecc = it->second;
 	std::cout << "size of vecc  is " << vecc.size() << std::endl;
-
 	for (it = mapDetect.begin(); it != mapDetect.end(); it++) {
-
 		Vect = it->second;
 		std::cout << "Vector size is " << Vect.size() << std::endl;
-
-		AdaptionBBox(Vect, detection);
-
+		AdaptionBBox(Vect, detection, flag);
+		//oldAdaptionBBox(Vect, detection);
 		detections.push_back(detection);
-
 	}
 
 	std::cout << "convertMapIntoVector Finished" << std::endl;
@@ -298,17 +389,17 @@ void convertMapIntoVector(std::map<QString, std::vector<SH::DetectionRectangle>>
 
 
 
-void MergeBBox(std::vector<SH::DetectionRectangle> inputs, std::vector<SH::DetectionRectangle> &outputs, float threshold) {
+void MergeBBox(std::vector<SH::DetectionRectangle> inputs, std::vector<SH::DetectionRectangle> &outputs, const float threshold, const int flag) {
 
 	std::map<QString, std::vector<SH::DetectionRectangle>> mapDetect;
 	sortByObjectIntoMap(inputs, mapDetect, threshold);
 
-	std::cout <<"The Input of function sortByObjectIntoMap is: "<< inputs.size() << std::endl;
-	std::cout << "The Output of function sortByObjectIntoMap, mapDetect size is: " << mapDetect.size() << std::endl;
+	//std::cout <<"The Input of function sortByObjectIntoMap is: "<< inputs.size() << std::endl;
+	//std::cout << "The Output of function sortByObjectIntoMap, mapDetect size is: " << mapDetect.size() << std::endl;
 
-	std::cout << "The Input of function convertMapIntoVector is: " << mapDetect.size() << std::endl;
+	//std::cout << "The Input of function convertMapIntoVector is: " << mapDetect.size() << std::endl;
 
-	convertMapIntoVector(mapDetect, outputs);
+	convertMapIntoVector(mapDetect, outputs, flag);
 	std::cout << "The Output of function convertMapIntoVector is " << outputs.size() << std::endl;
 	std::cout << "MergeBBox Finished" << std::endl;
 
