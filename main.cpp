@@ -135,21 +135,40 @@ void drawKeypoints(cv::Mat& img_draw, std::vector<SH::DetectionRectangle> detect
 
 
 int main() {
+	std::string ImgPath = "C:/Data/NMS_test/000000000063.jpg";
+	QString AnnotationsPath ="C:/Data/NMS_test/000000000063.annotations" ;
+	//File:000000000785, 000000004395,000000006471,000000000063
 	// Example 1: Load Annotations
-	auto detections = readZBSAnnotationsFile("E:/HiTD_SEFUGA-Data/Coco/test2017/000000000063.annotations"); //@Zhe: Path needs to be adjusted
-
-	MergeBBox(detections, newdetections, 0.5);
-
+	//auto detections = readZBSAnnotationsFile("C:/Data/CocoAnnotations/test2017/000000000016.annotations"); //@Zhe: Path needs to be adjusted
+	auto detections = readZBSAnnotationsFile(AnnotationsPath);
+	std::vector<SH::DetectionRectangle> newdetections, comparedetections;
 	// Example 2: Write Annotations
-	writeZBSAnnotationsFile(newdetections, "D:/test.annotations"); //@Zhe: Path needs to be adjusted
+	//writeZBSAnnotationsFile(detections, "D:/test.annotations"); //@Zhe: Path needs to be adjusted
+	int flag = 2;
+	float NMS_Threshlod = 0.1;
+	int flagOfNMS = 3;
+	float k1 = 1.35;
+	MergeBBox(detections, newdetections, NMS_Threshlod, flag, flagOfNMS, k1);
+	MergeBBox(detections, comparedetections, NMS_Threshlod, 1, flagOfNMS, k1);
 
 	// Example 3: Show image with annotations
-	cv::Mat image = cv::imread("E:/HiTD_SEFUGA-Data/Coco/test2017/000000000063.jpg"); //@Zhe: Path needs to be adjusted
+	//cv::Mat image = cv::imread("C:/Data/CocoAnnotations/test2017/000000000016.jpg"); //@Zhe: Path needs to be adjusted
+	writeZBSAnnotationsFile(newdetections, "C:/Data/NMS_test/test.annotations"); //@Zhe: Path needs to be adjusted
+
+	cv::Mat image = cv::imread(ImgPath); 
+	cv::Mat compareimage = cv::imread(ImgPath);
+	cv::Mat newimage = cv::imread(ImgPath);
+
 	drawKeypoints(image, detections);
-	cv::Mat newimage = cv::imread("E:/HiTD_SEFUGA-Data/Coco/test2017/000000000063.jpg");
+	drawKeypoints(compareimage, comparedetections);
 	drawKeypoints(newimage, newdetections);
 
-	cv::imshow("image", image);
-	cv::imshow("newimage", newimage);
+
+	cv::Mat honcat, output;
+	cv::hconcat(image, compareimage, output);
+	cv::hconcat(output, newimage, honcat);
+
+	cv::imshow("honcat", honcat);
+
 	cv::waitKey(0);
 }
