@@ -24,8 +24,8 @@ int getMaxAndPosition( std::vector<T> input, T& Max) {
 			index = index + 1;
 		}
 	}
-	std::cout << "Max is "<< Max << std::endl;
-	std::cout << "Position is at " << position << std::endl;
+	//std::cout << "Max is "<< Max << std::endl;
+	//std::cout << "Position is at " << position << std::endl;
 	return position;
 }
 
@@ -34,7 +34,7 @@ int getMaxAndPosition( std::vector<T> input, T& Max) {
 //Sort the detections into different Objects by using isSameObj function.
 
 
-void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::map<QString, std::vector<SH::DetectionRectangle>> &outputMap, float threshold) {
+void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::map<QString, std::vector<SH::DetectionRectangle>> &outputMap, float threshold, int flagOfNMS, float k1) {
 	std::map<QString, std::vector<SH::DetectionRectangle>> mapDetect;
 	std::map<QString, std::vector<SH::DetectionRectangle>>::iterator it;
 
@@ -56,7 +56,6 @@ void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::ma
 			detectionsCurrentClass.push_back(detections[i]);
 			mapDetect.insert(std::pair<QString, std::vector<SH::DetectionRectangle>>(detections[i].className, detectionsCurrentClass));
 			//Insert new Key-Value, which is Classname-Vector of Detections.
-			std::cout << "Insert new Classname-Vector Finished" << std::endl;
 
 		}
 		else {
@@ -64,7 +63,6 @@ void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::ma
 			//ClassName found. Add this detection into vector of DetectionRectangle.
 
 			mapDetect[Name].push_back(detections[i]);
-			std::cout << "ClassName found in sortByObjectintoMap Finished" << std::endl;
 
 		}
 
@@ -86,7 +84,6 @@ void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::ma
 
 	//So right now, we should use the function "isSameObj" to seperate them into different groups.
 
-	std::cout << "Now map size is: " << mapDetect.size() << std::endl;
 
 
 	std::vector<SH::DetectionRectangle> Vect;
@@ -105,12 +102,10 @@ void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::ma
 			std::vector<float> vectorProb;
 			for (int i = 0; i < Vect.size(); i++) {
 				vectorProb.push_back(Vect[i].prob);
-				std::cout << "Prob push_back to vectorProb Finished" << std::endl;
 			}
 			int position;
 			float getMax = 0.0;
 			position = getMaxAndPosition(vectorProb, getMax);
-			std::cout << "getMax and Position Finished" << std::endl;
 			std::string strNameOfClass = NameOfClass.toStdString();
 			std::string str = std::to_string(k);
 			std::vector<SH::DetectionRectangle> vecSortByObj;//I'm not sure, if I can initialize a vector in this way.
@@ -123,7 +118,7 @@ void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::ma
 			std::vector<SH::DetectionRectangle>::iterator itr = (Vect.begin() + position);
 			Vect.erase(itr++);// And then delete it.
 			for (int i = 0; i < Vect.size(); i++) {
-				bool SameObj = SH::isSameObj(Vect[i], vecSortByObj[0], threshold);
+				bool SameObj = SH::isSameObj(Vect[i], vecSortByObj[0], threshold, flagOfNMS, k1);
 				if (SameObj) {
 					// If they belong to the same Object, then put them into a same vector.
 					vecSortByObj.push_back(Vect[i]);
@@ -131,7 +126,6 @@ void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::ma
 					std::vector<SH::DetectionRectangle>::iterator newitr = (Vect.begin() + i);
 					Vect.erase(newitr);
 					i = i - 1;
-					std::cout << "Vec erase Finished" << std::endl;
 				}
 				else {
 					continue;
@@ -154,7 +148,6 @@ void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::ma
 
 		// A safe way to erase!!
 
-		std::cout << "mapDetect erase Finished" << std::endl;
 		//Move to the next class
 
 	}
@@ -173,7 +166,6 @@ void sortByObjectIntoMap(std::vector<SH::DetectionRectangle> detections, std::ma
 	//for (ittest = mapDetect.begin(); ittest != mapDetect.end();ittest++) {
 	//	std::cout << "Key: " << (ittest->first).toStdString() << " Value: " << ((ittest->second)[0].className).toStdString() << std::endl;
 	//}
-	std::cout << "At the end of sortByObjectIntoMap, map size is: " << mapDetect.size() << std::endl;
 
 	std::cout << "SortByObjectIntoMap Finished" << std::endl;
 }
@@ -191,7 +183,6 @@ void oldAdaptionBBox(std::vector<SH::DetectionRectangle> Inputs, SH::DetectionRe
 		int position = 0;
 		float getMax = 0;
 		position = getMaxAndPosition(vectorProb, getMax);
-		std::cout << "getMax and Position Finished" << std::endl;
 		float maxProb = getMax;
 		float sumX = 0;
 		float sumY = 0;
@@ -224,7 +215,6 @@ void oldAdaptionBBox(std::vector<SH::DetectionRectangle> Inputs, SH::DetectionRe
 
 
 void AdaptionBBox(std::vector<SH::DetectionRectangle> Inputs, SH::DetectionRectangle& Output,const int flag) {
-	std::cout << "The Input of function AdaptionBBox is " << Inputs.size() << std::endl;
 	if (Inputs.size() == 0) {
 		std::cout << "Error in AdaptionBBox, input size = 0" << std::endl;
 	}
@@ -236,7 +226,6 @@ void AdaptionBBox(std::vector<SH::DetectionRectangle> Inputs, SH::DetectionRecta
 		int position = 0;
 		float getMax = 0;
 		position = getMaxAndPosition(vectorProb, getMax);
-		std::cout << "getMax and Position Finished" << std::endl;
 		float maxProb = getMax;
 		float sumX = 0;
 		float sumY = 0;
@@ -271,7 +260,6 @@ void AdaptionBBox(std::vector<SH::DetectionRectangle> Inputs, SH::DetectionRecta
 		int position = 0;
 		float getMax = 0;
 		position = getMaxAndPosition(vectorProb, getMax);
-		std::cout << "getMax and Position Finished" << std::endl;
 		Output = Inputs[position];
 		for (int i = 0; i < Inputs.size(); i++) {
 			if (i == position) {
@@ -283,7 +271,7 @@ void AdaptionBBox(std::vector<SH::DetectionRectangle> Inputs, SH::DetectionRecta
 				//Maybe the rectangle Inputs[i] is not a correct detection.
 				std::cout << "intersection = 0, "<< Output.className.toStdString() << std::endl;
 
-				//continue;
+				continue;
 			}
 			if ((interSec / Area) <= (Inputs[i].prob / getMax)) {
 				//change the parameter of Outpus.
@@ -389,10 +377,10 @@ void convertMapIntoVector(std::map<QString, std::vector<SH::DetectionRectangle>>
 
 
 
-void MergeBBox(std::vector<SH::DetectionRectangle> inputs, std::vector<SH::DetectionRectangle> &outputs, const float threshold, const int flag) {
+void MergeBBox(std::vector<SH::DetectionRectangle> inputs, std::vector<SH::DetectionRectangle> &outputs, const float threshold, const int flag, const int flagOfNMS, float k1) {
 
 	std::map<QString, std::vector<SH::DetectionRectangle>> mapDetect;
-	sortByObjectIntoMap(inputs, mapDetect, threshold);
+	sortByObjectIntoMap(inputs, mapDetect, threshold, flagOfNMS, k1);
 
 	//std::cout <<"The Input of function sortByObjectIntoMap is: "<< inputs.size() << std::endl;
 	//std::cout << "The Output of function sortByObjectIntoMap, mapDetect size is: " << mapDetect.size() << std::endl;
@@ -406,3 +394,4 @@ void MergeBBox(std::vector<SH::DetectionRectangle> inputs, std::vector<SH::Detec
 
 
 }
+
