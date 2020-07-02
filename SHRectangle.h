@@ -255,22 +255,62 @@ namespace SH {
 		return intersection_area / union_area;
 	}
 
-	float distanceCenPoint(Rectangle& d1, Rectangle& d2){
-		return pow((d1.x_c - d2.x_c) , 2) + pow((d1.y_c - d2.y_c) , 2);
+	float distanceCenPoint(Rectangle& d1, Rectangle& d2) {
+
+		return pow((d1.x_c - d2.x_c), 2) + pow((d1.y_c - d2.y_c), 2);
+
 	}
 
-	float diagonal(Rectangle& d1, Rectangle& d2){
-		float right = (std::max)(d1.getLeftBorder(), d2.getLeftBorder());
-		float left = (std::min)(d1.getRightBorder(), d2.getRightBorder());
-		float bottom = (std::max)(d1.getTopBorder(), d2.getTopBorder());
-		float top = (std::min)(d1.getBottomBorder(), d2.getBottomBorder());
+	float radDifference(Rectangle& d1, Rectangle& d2) {
+		float rad1 = std::acos(d1.width / (sqrt(d1.width*d1.width + d1.height*d1.height)));
+		float rad2 = std::acos(d2.width / (sqrt(d2.width*d2.width + d2.height*d2.height)));
+		return abs(rad1 - rad2);
+	}
+
+	float diagonalDifference(Rectangle& d1, Rectangle& d2) {
+		float l1 = sqrt(pow(d1.width, 2) + pow(d1.height, 2));
+		float l2 = sqrt(pow(d2.width, 2) + pow(d2.height, 2));
+
+		return abs(l1 - l2);
+	}
+
+
+	float diagonalLengthSpanningRect(Rectangle& d1, Rectangle& d2) {
+
+		float left = (std::min)(d1.getLeftBorder(), d2.getLeftBorder());
+
+		float right = (std::max)(d1.getRightBorder(), d2.getRightBorder());
+
+		float top = (std::min)(d1.getTopBorder(), d2.getTopBorder());
+
+		float bottom = (std::max)(d1.getBottomBorder(), d2.getBottomBorder());
+
 		float result = pow((left - right), 2) + pow((bottom - top), 2);
+
 		return result;
+
 	}
 
-	float NonMaxSupp(Rectangle& d1, Rectangle& d2){
-		result = intersectionOverUnion(d1, d2) - (distanceCenPoint(d1, d2)/diagonal(d1, d2));//Penalty function: R(diou).
+
+
+	float NonMaxSupp(Rectangle& d1, Rectangle& d2, int flag, float k1) {
+		float result;
+		if (flag == 1) {
+			result = intersectionOverUnion(d1, d2) - (distanceCenPoint(d1, d2) / diagonalLengthSpanningRect(d1, d2));//Penalty function: R(diou).
+
+		}
+		else if(flag == 2){
+			result = intersectionOverUnion(d1, d2);
+		}
+		else if (flag == 3) {
+			//result = gradDifference(d1, d2) + diagonalDifference(d1, d2);
+			float k2 = 1.0 - k1;
+			result = k1*radDifference(d1, d2) + k2*(distanceCenPoint(d1, d2) / diagonalLengthSpanningRect(d1, d2));
+		}
+
+		std::cout << "NMS is: " << result<< std::endl;
 		return result;
+
 	}
 
 	class DetectionRectangle : public Rectangle
@@ -281,18 +321,17 @@ namespace SH {
 		float prob = 0.f;
 	};
 
+	bool isSameObj( DetectionRectangle& d1,  DetectionRectangle& d2, float threshold, int flagOfNMS, float k1) {
 
-	bool isSameObj(DetectionRectangle& d1, DetectionRectangle& d2, float threshold){
-		if(d1.className != d2.className){
+		if (d1.className != d2.className) {
 			return false;
 		}
-		float NMS = SH::NonMaxSupp(d1, d2);
-		if(NMS <= threshold){
+		float NMS = SH::NonMaxSupp(d1, d2, flagOfNMS, k1);
+		if (NMS <= threshold) {
 			return true;
-		}else{
+		}
+		else {
 			return false;
 		}
-
-	}	
-
+	}
 } // namespace SH
